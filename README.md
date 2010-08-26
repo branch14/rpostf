@@ -2,6 +2,8 @@
 
 Generate PostFinance (Swiss Post) URLs and vaildate responses.
 
+ * https://e-payment.postfinance.ch/
+
 ## Example
 
     pf = Rpostf.new(:login => 'your_login', :secret => 'your_secret', :local_host => 'your_domain')
