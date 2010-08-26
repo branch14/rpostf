@@ -14,18 +14,19 @@ Gem::Specification.new do |s|
   s.email = %q{phil@branch14.org}
   s.extra_rdoc_files = [
     "LICENSE",
-     "README.rdoc"
+     "README.md"
   ]
   s.files = [
     ".document",
      ".gitignore",
      "LICENSE",
-     "README.rdoc",
+     "README.md",
      "Rakefile",
      "VERSION",
      "lib/hash.rb",
      "lib/rpostf.rb",
      "lib/string.rb",
+     "rpostf.gemspec",
      "test/helper.rb",
      "test/test_rpostf.rb"
   ]

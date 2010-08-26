@@ -3,13 +3,14 @@ require 'logger'
 require File.join(File.dirname(__FILE__), %w(string))
 require File.join(File.dirname(__FILE__), %w(hash))
 
-# Rpostf -- Ruby POst FInance
+# Rpostf -- Ruby POST Finance
 # a ruby library for the "Post Finance (SWISS POST)" payment gateway 
 #
 # usage:
 #
 #  pf = Rpostf.new(:login => 'asdf', :secret => 'xxxx', :local_host => 'http://bogus.net')
-#  url = pf.url(:orderID => bogus_id, :amount => suspicious_amount) # gives you the url for a from
+#  url = pf.url_for_get(:orderID => bogus_id,
+#                       :amount => suspicious_amount)
 #
 #  # in rails something like
 #  form_tag url
@@ -35,8 +36,8 @@ class Rpostf
   end
   
   DEFAULT_OPTIONS = {
-    :base_url => 'https://e-payment.postfinance.ch/ncol/test/orderdirect.asp',
-    #:base_url => 'https://e-payment.postfinance.ch/ncol/test/orderstandard.asp',
+    #:base_url => 'https://e-payment.postfinance.ch/ncol/test/orderdirect.asp',
+    :base_url => 'https://e-payment.postfinance.ch/ncol/test/orderstandard.asp',
     :locale => 'de_DE',
     :currency => 'CHF',
     :local_port => 80,
