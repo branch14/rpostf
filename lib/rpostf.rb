@@ -97,7 +97,7 @@ class Rpostf
       :accepturl => [ @options[:local_protocol], '://',
                       @options[:local_host], ':',
                       @options[:local_port],
-                      @options[:local_route] ]*''
+                      options[:local_route] ]*''
     })
     options[:SHASign] = generate_signature(options)
 
