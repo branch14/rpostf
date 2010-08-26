@@ -4,10 +4,10 @@ Generate PostFinance (Swiss Post) URLs and vaildate responses.
 
 ## Example
 
- pf = Rpostf.new(:login => 'your_login', :secret => 'your_secret', :local_host => 'your_domain')
- p params = pf.params_for_post(:orderID => rand(1_000_000), :amount => 42)
- p form = pf.form_for_post(:orderID => rand(1_000_000), :amount => 43)
- p url = pf.url_for_get(:orderID => rand(1_000_000), :amount => 44)
+    pf = Rpostf.new(:login => 'your_login', :secret => 'your_secret', :local_host => 'your_domain')
+    p params = pf.params_for_post(:orderID => rand(1_000_000), :amount => 42)
+    p form = pf.form_for_post(:orderID => rand(1_000_000), :amount => 43)
+    p url = pf.url_for_get(:orderID => rand(1_000_000), :amount => 44)
 
 ## Note on Patches/Pull Requests
  
@@ -22,4 +22,4 @@ Generate PostFinance (Swiss Post) URLs and vaildate responses.
 
 ## Copyright
 
-Copyright (c) 2010 Phil Hofmann <pho@panter.ch>. See LICENSE for details.
+Copyright (c) 2010 Phil Hofmann <pho at panter dot ch>. See LICENSE for details.
