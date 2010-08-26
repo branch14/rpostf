@@ -5,12 +5,12 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "rpostf"
-    gem.summary = %Q{TODO: one-line summary of your gem}
-    gem.description = %Q{TODO: longer description of your gem}
+    gem.summary = "PostFinance (Swiss Post) Payment Gateway API"
+    gem.description = "generate PostFinance (Swiss Post) URLs and vaildate responses"
     gem.email = "phil@branch14.org"
     gem.homepage = "http://github.com/branch14/rpostf"
-    gem.authors = ["Phil"]
-    gem.add_development_dependency "thoughtbot-shoulda", ">= 0"
+    gem.authors = ["Phil Hofmann"]
+    # gem.add_development_dependency "thoughtbot-shoulda", ">= 0"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
   Jeweler::GemcutterTasks.new
