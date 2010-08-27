@@ -118,13 +118,23 @@ class Rpostf
   end
 
   # verifies a signature
-  def verify_signature(params)
-    keys = [:orderID, :currency, :amount, :PM, :ACCEPTANCE,
-            :STATUS, :CARDNO, :ALIAS, :PAYID, :NCERROR, :BRAND]
-    hash = (keys.map { |key| params[key] } << @options[:secret]).join('')
-    params[:SHASIGN] == hash.sha1
+  def signature_valid?(params, sha1sig=nil)
+    sha1sig = params.delete('SHASIGN') if sha1sig.nil?
+    sha1sig == signature(params)
   end
   
+  def hash_string(params)
+    ps = params.dup
+    ps['amount'] = (ps['amount'].to_i * 100).to_s
+    params_list = ps.to_a.map { |k, v| [ k.to_s.upcase, v ] }
+    sorted_list = params_list.sort_by { |k, v| k }
+    sorted_list.map { |a| (a * '=') + @options[:secret] } * ''
+  end
+
+  def signature(params)
+    hash_string(params).sha1
+  end
+
   private
   
   # generates a sha1 signature for the post finance url
@@ -134,7 +144,7 @@ class Rpostf
      [:currency, :login, :secret].map { |key| @options[:key]}
     ].flatten.join('').sha1
   end
-  
+
   # ensures that the passed options hash includes all mandatory keys
   def check_keys(*args)
     options = args.shift
@@ -153,10 +163,34 @@ end
 # examples
 if $0 == __FILE__
 
-  pf = Rpostf.new(:login => 'your_login', :secret => 'your_secret', :local_host => 'your_domain')
-  p params = pf.params_for_post(:orderID => rand(1_000_000), :amount => 42)
-  puts form = pf.form_for_post(:orderID => rand(1_000_000), :amount => 43)
-  p url = pf.url_for_get(:orderID => rand(1_000_000), :amount => 44)
+  ### examples ###
+
+  # rpf = Rpostf.new(:login => 'your_login', :secret => 'your_sha1_secret', :local_host => 'your_domain')
+  # p params = rpf.params_for_post(:orderID => rand(1_000_000), :amount => 42)
+  # puts form = rpf.form_for_post(:orderID => rand(1_000_000), :amount => 43)
+  # p url = rpf.url_for_get(:orderID => rand(1_000_000), :amount => 44)
+
+  ### testing ###
+
+  # sample data
+  params = Hash[*%w(ACCEPTANCE 1234 amount 15 BRAND VISA CARDNO xxxxxxxxxxxx1111 currency EUR NCERROR 0 orderID 12 PAYID 32100123 PM CreditCard STATUS 9)]
+  example_hash = "ACCEPTANCE=1234Mysecretsig1875!?AMOUNT=1500Mysecretsig1875!?BRAND=VISAMysecretsig1875!?CARDNO=xxxxxxxxxxxx1111Mysecretsig1875!?CURRENCY=EURMysecretsig1875!?NCERROR=0Mysecretsig1875!?ORDERID=12Mysecretsig1875!?PAYID=32100123Mysecretsig1875!?PM=CreditCardMysecretsig1875!?STATUS=9Mysecretsig1875!?"
+  example_digest = "28B64901DF2528AD100609163BDF73E3EF92F3D4"
+
+  # integrity test
+  puts example_hash.sha1 == example_digest ? 'success' : 'failure'
+
+  # testing ruby code
+  rpf = Rpostf.new(:login => 'your_login', :secret => 'Mysecretsig1875!?', :local_host => 'your_domain')
+
+  test_hash = rpf.hash_string(params) 
+  puts test_hash == example_hash ? 'success: hashes match' : 'failure: hashes differ'
+
+  test_digest = rpf.signature(params)
+  puts test_digest == example_digest ? 'success: digests match' : 'failure: digests differ'
+
+  puts rpf.signature_valid?(params, test_digest) ? 'success' : 'failure'
+  puts rpf.signature_valid?(params.merge("SHASIGN" => test_digest)) ? 'success' : 'failure'
 
 end
 
