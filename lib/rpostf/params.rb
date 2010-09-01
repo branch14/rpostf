@@ -32,6 +32,12 @@ class Rpostf
       @data.map { |a| ( a * '=' ) + passwd } * ''
     end
 
+    private 
+    
+    def to_s
+      @data.map { |d| d * '=' } * "\n"
+    end
+
   end
 
 end

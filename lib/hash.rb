@@ -1,5 +1,5 @@
 class Hash
-  def reverse_merge!(other_hash)
-    replace(other_hash.merge!(self))
+  def reverse_merge(other_hash)
+    other_hash.merge(self)
   end
 end

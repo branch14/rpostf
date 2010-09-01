@@ -62,7 +62,7 @@ class Rpostf
   #
   def initialize(options={})
     check_keys options, :login, :secret, :local_host
-    @options = options.reverse_merge!(DEFAULT_OPTIONS)
+    @options = options.reverse_merge(DEFAULT_OPTIONS)
   end
 
   # returns a string containing a url for a GET
@@ -83,6 +83,19 @@ class Rpostf
     Params.new(params).to_digest(@options[pass])
   end
 
+  def debug(params, pass=nil)
+    password = @options[pass ||= :sha1insig]
+    ps = Params.new(params)
+
+    require 'erb'
+    ERB::Util.html_escape([ "params:   " + params.inspect,
+                            "nonblank: " + ps.non_blank,
+                            "upcase:   " + ps.non_blank.upcase,
+                            "sorted:   " + ps.non_blank.upcase.sorted,
+                            "hash:     " + ps.to_hash(password),
+                            "digest:   " + ps.to_digest(password) ] * "\n\n")
+  end
+
   # returns a hash containing the params for a POST
   #
   # mandatory keys for +options+ are
@@ -97,8 +110,8 @@ class Rpostf
   #
   def params_for_post(options={})
     check_keys options, :orderID, :amount
-    
-    options.reverse_merge!({
+
+    opts = options.reverse_merge({
       :PSPID => @options[:login],
       :currency => @options[:currency],
       :language => @options[:locale],
@@ -107,9 +120,9 @@ class Rpostf
                       @options[:local_port],
                       @options[:local_route] ]*''
     })
-    options[:SHASign] = signature(options)
+    opts[:SHASign] = signature(opts)
 
-    options
+    opts
   end
 
   # returns a string containing html markup
