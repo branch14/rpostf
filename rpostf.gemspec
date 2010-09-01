@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Phil Hofmann"]
-  s.date = %q{2010-08-26}
+  s.date = %q{2010-09-01}
   s.description = %q{generate PostFinance (Swiss Post) URLs and vaildate responses}
   s.email = %q{phil@branch14.org}
   s.extra_rdoc_files = [
@@ -37,6 +37,7 @@ Gem::Specification.new do |s|
   s.summary = %q{PostFinance (Swiss Post) Payment Gateway API}
   s.test_files = [
     "test/helper.rb",
+     "test/rpostf/params.rb",
      "test/test_rpostf.rb"
   ]
 

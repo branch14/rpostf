@@ -2,6 +2,7 @@ require 'logger'
 
 require File.join(File.dirname(__FILE__), %w(string))
 require File.join(File.dirname(__FILE__), %w(hash))
+require File.join(File.dirname(__FILE__), %w(rpostf params))
 
 # Rpostf -- Ruby POST Finance
 # a ruby library for the "Post Finance (SWISS POST)" payment gateway 
@@ -99,7 +100,7 @@ class Rpostf
                       @options[:local_port],
                       @options[:local_route] ]*''
     })
-    options[:SHASign] = generate_signature(options)
+    options[:SHASign] = Params.new(options).to_digest(@options[:sha1insig])
 
     options
   end
@@ -120,31 +121,9 @@ class Rpostf
   # verifies a signature
   def signature_valid?(params, sha1sig=nil)
     sha1sig = params.delete('SHASIGN') if sha1sig.nil?
-    sha1sig == signature(params)
+    sha1sig == Params(params).to_digest(@options[:secret]).upcase
   end
   
-  def hash_string(params)
-    ps = params.dup
-    ps['amount'] = (ps['amount'].to_i * 100).to_s
-    params_list = ps.to_a.map { |k, v| [ k.to_s.upcase, v ] }
-    sorted_list = params_list.sort_by { |k, v| k }
-    sorted_list.map { |a| (a * '=') + @options[:secret] } * ''
-  end
-
-  def signature(params)
-    hash_string(params).sha1
-  end
-
-  private
-  
-  # generates a sha1 signature for the post finance url
-  def generate_signature(options)
-    [options[:orderID],
-     options[:amount],
-     [:currency, :login, :secret].map { |key| @options[:key]}
-    ].flatten.join('').sha1
-  end
-
   # ensures that the passed options hash includes all mandatory keys
   def check_keys(*args)
     options = args.shift
@@ -189,8 +168,8 @@ if $0 == __FILE__
   test_digest = rpf.signature(params)
   puts test_digest == example_digest ? 'success: digests match' : 'failure: digests differ'
 
-  puts rpf.signature_valid?(params, test_digest) ? 'success' : 'failure'
-  puts rpf.signature_valid?(params.merge("SHASIGN" => test_digest)) ? 'success' : 'failure'
+  puts rpf.signature_valid?(params, test_digest) ? 'success: verified1' : 'failure'
+  puts rpf.signature_valid?(params.merge("SHASIGN" => test_digest)) ? 'success: verified2' : 'failure'
 
 end
 
