@@ -1,6 +1,7 @@
 require 'logger'
 
 require File.join(File.dirname(__FILE__), %w(string))
+require File.join(File.dirname(__FILE__), %w(nil_class))
 require File.join(File.dirname(__FILE__), %w(hash))
 require File.join(File.dirname(__FILE__), %w(rpostf params))
 
@@ -76,6 +77,12 @@ class Rpostf
     [@options[:base_url], parameters*'&'].join('?')
   end
 
+  # generates a signatur for the given parameters
+  def signature(params, pass=nil)
+    pass ||= :sha1insig
+    Params.new(params).to_digest(@options[pass])
+  end
+
   # returns a hash containing the params for a POST
   #
   # mandatory keys for +options+ are
@@ -100,7 +107,7 @@ class Rpostf
                       @options[:local_port],
                       @options[:local_route] ]*''
     })
-    options[:SHASign] = Params.new(options).to_digest(@options[:sha1insig])
+    options[:SHASign] = signature(options)
 
     options
   end
@@ -151,25 +158,35 @@ if $0 == __FILE__
 
   ### testing ###
 
-  # sample data
-  params = Hash[*%w(ACCEPTANCE 1234 amount 15 BRAND VISA CARDNO xxxxxxxxxxxx1111 currency EUR NCERROR 0 orderID 12 PAYID 32100123 PM CreditCard STATUS 9)]
-  example_hash = "ACCEPTANCE=1234Mysecretsig1875!?AMOUNT=1500Mysecretsig1875!?BRAND=VISAMysecretsig1875!?CARDNO=xxxxxxxxxxxx1111Mysecretsig1875!?CURRENCY=EURMysecretsig1875!?NCERROR=0Mysecretsig1875!?ORDERID=12Mysecretsig1875!?PAYID=32100123Mysecretsig1875!?PM=CreditCardMysecretsig1875!?STATUS=9Mysecretsig1875!?"
-  example_digest = "28B64901DF2528AD100609163BDF73E3EF92F3D4"
+  ###   # sample data
+  ###   params = Hash[*%w(ACCEPTANCE 1234 amount 15 BRAND VISA CARDNO xxxxxxxxxxxx1111 currency EUR NCERROR 0 orderID 12 PAYID 32100123 PM CreditCard STATUS 9)]
+  ###   example_hash = "ACCEPTANCE=1234Mysecretsig1875!?AMOUNT=1500Mysecretsig1875!?BRAND=VISAMysecretsig1875!?CARDNO=xxxxxxxxxxxx1111Mysecretsig1875!?CURRENCY=EURMysecretsig1875!?NCERROR=0Mysecretsig1875!?ORDERID=12Mysecretsig1875!?PAYID=32100123Mysecretsig1875!?PM=CreditCardMysecretsig1875!?STATUS=9Mysecretsig1875!?"
+  ###   example_digest = "28B64901DF2528AD100609163BDF73E3EF92F3D4"
+  ### 
+  ###   # integrity test
+  ###   puts example_hash.sha1 == example_digest ? 'success' : 'failure'
+  ### 
+  ###   # testing ruby code
+  ###   rpf = Rpostf.new(:login => 'your_login', :secret => 'Mysecretsig1875!?', :local_host => 'your_domain')
+  ### 
+  ###   test_hash = rpf.hash_string(params) 
+  ###   puts test_hash == example_hash ? 'success: hashes match' : 'failure: hashes differ'
+  ### 
+  ###   test_digest = rpf.signature(params)
+  ###   puts test_digest == example_digest ? 'success: digests match' : 'failure: digests differ'
+  ### 
+  ###   puts rpf.signature_valid?(params, test_digest) ? 'success: verified1' : 'failure'
+  ###   puts rpf.signature_valid?(params.merge("SHASIGN" => test_digest)) ? 'success: verified2' : 'failure'
 
-  # integrity test
-  puts example_hash.sha1 == example_digest ? 'success' : 'failure'
+  params = %w(amount 1500 currency EUR Operation RES orderID 1234 PSPID MyPSPID)
+  passwd = 'Mysecretsig1875!?'
 
-  # testing ruby code
-  rpf = Rpostf.new(:login => 'your_login', :secret => 'Mysecretsig1875!?', :local_host => 'your_domain')
+  hash = 'AMOUNT=1500Mysecretsig1875!?CURRENCY=EURMysecretsig1875!?OPERATION=RESMysecretsig1875!?ORDERID=1234Mysecretsig1875!?PSPID=MyPSPIDMysecretsig1875!?'
 
-  test_hash = rpf.hash_string(params) 
-  puts test_hash == example_hash ? 'success: hashes match' : 'failure: hashes differ'
+  digest = 'EB52902BCC4B50DC1250E5A7C1068ECF97751256'
 
-  test_digest = rpf.signature(params)
-  puts test_digest == example_digest ? 'success: digests match' : 'failure: digests differ'
-
-  puts rpf.signature_valid?(params, test_digest) ? 'success: verified1' : 'failure'
-  puts rpf.signature_valid?(params.merge("SHASIGN" => test_digest)) ? 'success: verified2' : 'failure'
-
+  p Rpostf::Params.new(Hash[*params]).to_digest(passwd).upcase == digest
+  p Rpostf::Params.new(Hash[*params]).to_hash(passwd) == hash
+  
 end
 
