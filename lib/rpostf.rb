@@ -28,7 +28,7 @@ class Rpostf
     
     def initialize(param, logger=nil)
       @param = param
-      @log = logger || Logger.new
+      @log = logger || Logger.new(STDOUT)
     end
     
     def message
@@ -61,7 +61,7 @@ class Rpostf
   #  +:locale_route+ default is '/postfinance_payments'
   #
   def initialize(options={})
-    check_keys options, :login, :secret, :local_host
+    #check_keys options, :login, :secret, :local_host
     @options = options.reverse_merge(DEFAULT_OPTIONS)
   end
 
@@ -85,15 +85,29 @@ class Rpostf
 
   def debug(params, pass=nil)
     password = @options[pass ||= :sha1insig]
-    ps = Params.new(params)
+    ps = Params.new(default_options(params))
 
-    require 'erb'
-    ERB::Util.html_escape([ "params:   " + params.inspect,
-                            "nonblank: " + ps.non_blank,
-                            "upcase:   " + ps.non_blank.upcase,
-                            "sorted:   " + ps.non_blank.upcase.sorted,
-                            "hash:     " + ps.to_hash(password),
-                            "digest:   " + ps.to_digest(password) ] * "\n\n")
+    #[ "=== params", params.to_a.map { |a| a * "=" } * "\n",
+    #  "=== default params", default_options.to_a.map { |a| a * "=" } * "\n",
+    #  "=== merged params", ps.to_s,
+    [ "=== non blank params", ps.non_blank.to_s,
+      "=== upcased params", ps.non_blank.upcase.to_s,
+      "=== sorted params", ps.non_blank.upcase.sorted.to_s,
+      "=== hash", ps.to_hash(password),
+      "=== sha1 digest", ps.to_digest(password) ] * "\n\n"
+  end
+
+  # returns a hash with merge_hash merged into default options 
+  def default_options(merge_hash={})
+    merge_hash.reverse_merge({
+      'PSPID' => @options[:login],
+      'currency' => @options[:currency],
+      'language' => @options[:locale],
+      'accepturl' => [ @options[:local_protocol], '://',
+                      @options[:local_host], ':',
+                      @options[:local_port],
+                      @options[:local_route] ]*''
+    })
   end
 
   # returns a hash containing the params for a POST
@@ -109,17 +123,9 @@ class Rpostf
   #  +:accepturl+
   #
   def params_for_post(options={})
-    check_keys options, :orderID, :amount
+    #check_keys options, :orderID, :amount
 
-    opts = options.reverse_merge({
-      :PSPID => @options[:login],
-      :currency => @options[:currency],
-      :language => @options[:locale],
-      :accepturl => [ @options[:local_protocol], '://',
-                      @options[:local_host], ':',
-                      @options[:local_port],
-                      @options[:local_route] ]*''
-    })
+    opts = default_options(options)
     opts[:SHASign] = signature(opts)
 
     opts
@@ -139,9 +145,10 @@ class Rpostf
   end
 
   # verifies a signature
-  def signature_valid?(params, sha1sig=nil)
-    sha1sig = params.delete('SHASIGN') if sha1sig.nil?
-    sha1sig == Params(params).to_digest(@options[:secret]).upcase
+  def signature_valid?(params, sha1out=nil)
+    ps = params.dup
+    sha1out = ps.delete('SHASIGN') if sha1out.nil?
+    sha1out == Params.new(ps).to_digest(@options[:sha1outsig]).upcase
   end
   
   # ensures that the passed options hash includes all mandatory keys
@@ -201,5 +208,13 @@ if $0 == __FILE__
   p Rpostf::Params.new(Hash[*params]).to_digest(passwd).upcase == digest
   p Rpostf::Params.new(Hash[*params]).to_hash(passwd) == hash
   
+  ps = {
+    :login => 'MyPSPID',
+    :sha1insig => passwd,
+    :secret => 'asdf',
+    :local_host => 'asdf'
+  }
+  # puts Rpostf.new(ps).debug(Hash[*params])
+
 end
 
