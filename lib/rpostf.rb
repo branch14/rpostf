@@ -10,7 +10,20 @@ require File.join(File.dirname(__FILE__), %w(rpostf params))
 #
 # usage:
 #
-#  pf = Rpostf.new(:login => 'asdf', :secret => 'xxxx', :local_host => 'http://bogus.net')
+#  pf = Rpostf.new(:login => 'asdf', :local_protocol => 'http',
+#                                    :local_host     => 'shop.example.com',
+#                                    :local_port     => '80',
+#                                    :local_route    => '/shopping',
+#                                    :sha1outsig     => 'ssBbun8fiZ0oksjh',
+#                                    :sha1insig      => 'Qh4lihxMpglu9Hxl' )
+#
+#       # The :local_* parameters are used to compose the 'accepturl' (in
+#       # Postfinance speak), which is the jump back address from Postfinance
+#       # back to the shop.
+#
+#       # Alternatively they can also be set via the :accepturl parameter to the
+#       # 'url_for_get' method below
+#
 #  url = pf.url_for_get(:orderID => bogus_id,
 #                       :amount => suspicious_amount)
 #
@@ -49,19 +62,23 @@ class Rpostf
   
   # mandatory keys for +options+ are
   #  +:login+
-  #  +:secret+
-  #  +:local_host+
+  #
+  # mandatory keys for +options+ if you want to do transactions
+  #
+  # +:sha1outsig+
+  # +:sha1insig+
   #
   # optional keys for +options+ are
   #  +:base_url+ default is ''
   #  +:language+ default is 'de_DE'
   #  +:currency+ default is 'CHF'
+  #  +:local_host+ default is ''
   #  +:local_port+ default is 80
   #  +:local_protocol+ default is 'https'
   #  +:locale_route+ default is '/postfinance_payments'
   #
   def initialize(options={})
-    #check_keys options, :login, :secret, :local_host
+    #check_keys options, :login
     @options = options.reverse_merge(DEFAULT_OPTIONS)
   end
 
@@ -116,7 +133,7 @@ class Rpostf
   #  +:orderID+
   #  +:amount+
   #
-  # optionsl keys for +options+ are
+  # optional keys for +options+ are
   #  +:PSPID+
   #  +:currency+
   #  +:language+
@@ -171,7 +188,11 @@ if $0 == __FILE__
 
   ### examples ###
 
-  # rpf = Rpostf.new(:login => 'your_login', :secret => 'your_sha1_secret', :local_host => 'your_domain')
+  # rpf = Rpostf.new(:login => 'your_login',
+  #                  :sha1insig => 'your_secret_sha1',
+  #                  :sha1outsig => 'their_secret_sha1',
+  #                  :local_host => 'your_domain')
+  #
   # p params = rpf.params_for_post(:orderID => rand(1_000_000), :amount => 42)
   # puts form = rpf.form_for_post(:orderID => rand(1_000_000), :amount => 43)
   # p url = rpf.url_for_get(:orderID => rand(1_000_000), :amount => 44)
@@ -187,7 +208,10 @@ if $0 == __FILE__
   ###   puts example_hash.sha1 == example_digest ? 'success' : 'failure'
   ### 
   ###   # testing ruby code
-  ###   rpf = Rpostf.new(:login => 'your_login', :secret => 'Mysecretsig1875!?', :local_host => 'your_domain')
+  ###   rpf = Rpostf.new(:login => 'your_login',
+  ###                    :sha1insig => 'Mysecretsig1875!?',
+  ###                    :sha1outsig => 'their_secret_sha1',
+  ###                    :local_host => 'your_domain')
   ### 
   ###   test_hash = rpf.hash_string(params) 
   ###   puts test_hash == example_hash ? 'success: hashes match' : 'failure: hashes differ'
@@ -199,19 +223,17 @@ if $0 == __FILE__
   ###   puts rpf.signature_valid?(params.merge("SHASIGN" => test_digest)) ? 'success: verified2' : 'failure'
 
   params = %w(amount 1500 currency EUR Operation RES orderID 1234 PSPID MyPSPID)
-  passwd = 'Mysecretsig1875!?'
+  shared_secret_sha = 'Mysecretsig1875!?'
 
   hash = 'AMOUNT=1500Mysecretsig1875!?CURRENCY=EURMysecretsig1875!?OPERATION=RESMysecretsig1875!?ORDERID=1234Mysecretsig1875!?PSPID=MyPSPIDMysecretsig1875!?'
 
   digest = 'EB52902BCC4B50DC1250E5A7C1068ECF97751256'
 
-  p Rpostf::Params.new(Hash[*params]).to_digest(passwd).upcase == digest
-  p Rpostf::Params.new(Hash[*params]).to_hash(passwd) == hash
+  p Rpostf::Params.new(Hash[*params]).to_digest(shared_secret_sha).upcase == digest
+  p Rpostf::Params.new(Hash[*params]).to_hash(shared_secret_sha) == hash
   
   ps = {
     :login => 'MyPSPID',
-    :sha1insig => passwd,
-    :secret => 'asdf',
     :local_host => 'asdf'
   }
   # puts Rpostf.new(ps).debug(Hash[*params])
