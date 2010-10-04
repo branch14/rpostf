@@ -6,10 +6,45 @@ Generate PostFinance (Swiss Post) URLs and vaildate responses.
 
 ## Example
 
-    pf = Rpostf.new(:login => 'your_login', :secret => 'your_secret', :local_host => 'your_domain')
+    pf = Rpostf.new(:login => 'your_login',
+                    :sha1outsig => 'somepasswith16digit',
+                    :sha1insig => 'someotherpasswith16digits')
+
     p params = pf.params_for_post(:orderID => rand(1_000_000), :amount => 42)
     p form = pf.form_for_post(:orderID => rand(1_000_000), :amount => 43)
     p url = pf.url_for_get(:orderID => rand(1_000_000), :amount => 44)
+
+## Rpostf & Rails
+
+This is just a suggestion.
+
+config/rpostf.yml
+    development:
+      login: yourpspidTEST
+      sha1outsig: somepasswith16digits
+      sha1insig: someotherpasswith16digits
+      base_url: https://e-payment.postfinance.ch/ncol/test/orderstandard.asp
+      accept_url: http://your-dev-deployment/route-to-accept-postfinance-requests
+    
+    production:
+      login: youpspid
+      sha1outsig: somepasswith16digits
+      sha1insig: someotherpasswith16digits
+      base_url: https://e-payment.postfinance.ch/ncol/prod/orderstandard.asp
+      accept_url: http://your-production-deployment/route-to-accept-postfinance-requests
+
+config/initializers/rpostf.rb
+    config_filename = File.join(RAILS_ROOT, %w(config rpostf.yml))
+    config = File.open(config_filename) { |f| YAML::load(f) }
+    RPOSTF = Rpostf.new(config[RAILS_ENV])
+
+And in the view you might want to add something like...
+
+vender/extensions/your_theme/app/views/checkouts/_payment.html.haml
+    -ps = { 'orderID' => @order.number,           |
+            'amount' => (@order.total*100).to_i } |
+    -url = RPOSTF.url_for_get(ps)
+    =link_to t(:checkout_with_postfinance), url, :method => :post
 
 ## Note on Patches/Pull Requests
  
