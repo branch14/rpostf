@@ -54,13 +54,13 @@ class Rpostf
   attr_accessor :config
 
   DEFAULT_OPTIONS = {
+    :base_url => 'https://e-payment.postfinance.ch/ncol/test/orderstandard.asp'
     #:base_url => 'https://e-payment.postfinance.ch/ncol/test/orderdirect.asp',
-    :base_url => 'https://e-payment.postfinance.ch/ncol/test/orderstandard.asp',
-    :locale => 'de_DE',
-    :currency => 'CHF',
-    :local_port => 80,
-    :local_protocol => 'https',
-    :local_route => '/postfinance_payments'
+    #:locale => 'de_DE',
+    #:currency => 'CHF',
+    #:local_port => 80,
+    #:local_protocol => 'https',
+    #:local_route => '/postfinance_payments'
   }
   
   # mandatory keys for +options+ are
@@ -81,9 +81,9 @@ class Rpostf
   #  +:locale_route+ default is '/postfinance_payments'
   #
   def initialize(options={})
-    #check_keys options, :login
     options.symbolize_keys!
-    self.config = options.reverse_merge(DEFAULT_OPTIONS)
+    #check_keys options, :login
+    self.config = DEFAULT_OPTIONS.merge(options)
   end
 
   # returns a string containing a url for a GET
@@ -111,15 +111,9 @@ class Rpostf
 
   # returns a hash with merge_hash merged into default options 
   def default_options(merge_hash={})
-    defaults = {
-      :PSPID => config[:login],
-      :currency => config[:currency]
-      # :language => config[:locale],
-      # :accepturl => [ config[:local_protocol], '://',
-      #                 config[:local_host], ':',
-      #                 config[:local_port],
-      #                 config[:local_route] ]*''
-    }
+    defaults = config.dup
+    defaults[:PSPID] = defaults.delete(:login)
+    %w(sha1insig sha1outsig base_url).each { |s| defaults.delete(s.to_sym) }
     defaults.merge(merge_hash)
   end
 
@@ -136,6 +130,7 @@ class Rpostf
   #  +:accepturl+
   #
   def params_for_post(options={})
+    options.symbolize_keys!
     #check_keys options, :orderID, :amount
     opts = default_options(options)
     opts[:SHASign] = signature(opts)
@@ -148,6 +143,7 @@ class Rpostf
   #
   #  +:submit_value+ is the caption of the submit button
   def form_for_post(options={})
+    options.symbolize_keys!
     submit_value = options.delete(:submit_value) || 'Checkout with Post Finance'
     options = params_for_post(options)
     (["<form action=\"#{config[:base_url]}\" method=\"post\">"] + 
