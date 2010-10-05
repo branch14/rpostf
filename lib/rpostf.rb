@@ -3,6 +3,7 @@ require 'logger'
 require File.join(File.dirname(__FILE__), %w(string))
 require File.join(File.dirname(__FILE__), %w(nil_class))
 require File.join(File.dirname(__FILE__), %w(hash))
+require File.join(File.dirname(__FILE__), %w(array))
 require File.join(File.dirname(__FILE__), %w(rpostf params))
 
 # Rpostf -- Ruby POST Finance
@@ -50,6 +51,8 @@ class Rpostf
     
   end
   
+  attr_accessor :config
+
   DEFAULT_OPTIONS = {
     #:base_url => 'https://e-payment.postfinance.ch/ncol/test/orderdirect.asp',
     :base_url => 'https://e-payment.postfinance.ch/ncol/test/orderstandard.asp',
@@ -65,8 +68,8 @@ class Rpostf
   #
   # mandatory keys for +options+ if you want to do transactions
   #
-  # +:sha1outsig+
-  # +:sha1insig+
+  # +:sha1outsig+ is what is used to sign requests that come from postfinance
+  # +:sha1insig+ is what is used to sign request that go to postfinance
   #
   # optional keys for +options+ are
   #  +:base_url+ default is ''
@@ -79,52 +82,45 @@ class Rpostf
   #
   def initialize(options={})
     #check_keys options, :login
-    @options = options.reverse_merge(DEFAULT_OPTIONS)
+    options.symbolize_keys!
+    self.config = options.reverse_merge(DEFAULT_OPTIONS)
   end
 
   # returns a string containing a url for a GET
   #
   # hands options over to params_for_post
   def url_for_get(options={})
+    options.symbolize_keys!
     options = params_for_post(options)
-
     parameters = []
-    options.each { |p| parameters << p*'=' }
-
-    [@options[:base_url], parameters*'&'].join('?')
+    options.each { |p| parameters << p * '=' }
+    [config[:base_url], parameters * '&'] * '?'
   end
 
-  # generates a signatur for the given parameters
-  def signature(params, pass=nil)
-    pass ||= :sha1insig
-    Params.new(params).to_digest(@options[pass])
+  # generates a signature for the given parameters
+  def signature(params, passwd=:sha1insig)
+    passwd = config[passwd] if passwd.is_a?(Symbol)
+    Params.new(params).to_digest(passwd).upcase
   end
 
-  def debug(params, pass=nil)
-    password = @options[pass ||= :sha1insig]
-    ps = Params.new(default_options(params))
-
-    #[ "=== params", params.to_a.map { |a| a * "=" } * "\n",
-    #  "=== default params", default_options.to_a.map { |a| a * "=" } * "\n",
-    #  "=== merged params", ps.to_s,
-    [ "=== non blank params", ps.non_blank.to_s,
-      "=== upcased params", ps.non_blank.upcase.to_s,
-      "=== sorted params", ps.non_blank.upcase.sorted.to_s,
-      "=== hash", ps.to_hash(password),
-      "=== sha1 digest", ps.to_digest(password) ] * "\n\n"
+  def debug(params, passwd=:sha1insig)
+    passwd = config[passwd] if passwd.is_a?(Symbol)
+    params = Hash[params] if params.is_a?(Array)
+    Params.new(params).debug(passwd)
   end
 
   # returns a hash with merge_hash merged into default options 
   def default_options(merge_hash={})
-    merge_hash.reverse_merge({
-      'PSPID' => @options[:login],
-      'currency' => @options[:currency],
-      'language' => @options[:locale],
-      'accepturl' => [ @options[:local_protocol], '://',
-                      @options[:local_host], ':',
-                      @options[:local_port],
-                      @options[:local_route] ]*''
-    })
+    defaults = {
+      :PSPID => config[:login],
+      :currency => config[:currency]
+      # :language => config[:locale],
+      # :accepturl => [ config[:local_protocol], '://',
+      #                 config[:local_host], ':',
+      #                 config[:local_port],
+      #                 config[:local_route] ]*''
+    }
+    defaults.merge(merge_hash)
   end
 
   # returns a hash containing the params for a POST
@@ -141,10 +137,8 @@ class Rpostf
   #
   def params_for_post(options={})
     #check_keys options, :orderID, :amount
-
     opts = default_options(options)
     opts[:SHASign] = signature(opts)
-
     opts
   end
 
@@ -156,7 +150,7 @@ class Rpostf
   def form_for_post(options={})
     submit_value = options.delete(:submit_value) || 'Checkout with Post Finance'
     options = params_for_post(options)
-    (["<form action=\"#{@options[:base_url]}\" method=\"post\">"] + 
+    (["<form action=\"#{config[:base_url]}\" method=\"post\">"] + 
      options.map { |n, v| hidden_field(n, v) } +
      ["<input type=\"submit\" value=\"#{submit_value}\" />", '</form>']) * "\n"
   end
@@ -164,8 +158,9 @@ class Rpostf
   # verifies a signature
   def signature_valid?(params, sha1out=nil)
     ps = params.dup
-    sha1out = ps.delete('SHASIGN') if sha1out.nil?
-    sha1out == Params.new(ps).to_digest(@options[:sha1outsig]).upcase
+    ps.symbolize_keys!
+    sha1out = ps.delete(:SHASIGN) if sha1out.nil?
+    sha1out == signature(ps, :sha1outsig)
   end
   
   # ensures that the passed options hash includes all mandatory keys
@@ -180,63 +175,6 @@ class Rpostf
   def hidden_field(name, value)
     "<input type=\"hidden\" name=\"#{name}\" value=\"#{value}\" />"
   end
-
-end
-
-# examples
-if $0 == __FILE__
-
-  ### examples ###
-
-  # rpf = Rpostf.new(:login => 'your_login',
-  #                  :sha1insig => 'your_secret_sha1',
-  #                  :sha1outsig => 'their_secret_sha1',
-  #                  :local_host => 'your_domain')
-  #
-  # p params = rpf.params_for_post(:orderID => rand(1_000_000), :amount => 42)
-  # puts form = rpf.form_for_post(:orderID => rand(1_000_000), :amount => 43)
-  # p url = rpf.url_for_get(:orderID => rand(1_000_000), :amount => 44)
-
-  ### testing ###
-
-  ###   # sample data
-  ###   params = Hash[*%w(ACCEPTANCE 1234 amount 15 BRAND VISA CARDNO xxxxxxxxxxxx1111 currency EUR NCERROR 0 orderID 12 PAYID 32100123 PM CreditCard STATUS 9)]
-  ###   example_hash = "ACCEPTANCE=1234Mysecretsig1875!?AMOUNT=1500Mysecretsig1875!?BRAND=VISAMysecretsig1875!?CARDNO=xxxxxxxxxxxx1111Mysecretsig1875!?CURRENCY=EURMysecretsig1875!?NCERROR=0Mysecretsig1875!?ORDERID=12Mysecretsig1875!?PAYID=32100123Mysecretsig1875!?PM=CreditCardMysecretsig1875!?STATUS=9Mysecretsig1875!?"
-  ###   example_digest = "28B64901DF2528AD100609163BDF73E3EF92F3D4"
-  ### 
-  ###   # integrity test
-  ###   puts example_hash.sha1 == example_digest ? 'success' : 'failure'
-  ### 
-  ###   # testing ruby code
-  ###   rpf = Rpostf.new(:login => 'your_login',
-  ###                    :sha1insig => 'Mysecretsig1875!?',
-  ###                    :sha1outsig => 'their_secret_sha1',
-  ###                    :local_host => 'your_domain')
-  ### 
-  ###   test_hash = rpf.hash_string(params) 
-  ###   puts test_hash == example_hash ? 'success: hashes match' : 'failure: hashes differ'
-  ### 
-  ###   test_digest = rpf.signature(params)
-  ###   puts test_digest == example_digest ? 'success: digests match' : 'failure: digests differ'
-  ### 
-  ###   puts rpf.signature_valid?(params, test_digest) ? 'success: verified1' : 'failure'
-  ###   puts rpf.signature_valid?(params.merge("SHASIGN" => test_digest)) ? 'success: verified2' : 'failure'
-
-  params = %w(amount 1500 currency EUR Operation RES orderID 1234 PSPID MyPSPID)
-  shared_secret_sha = 'Mysecretsig1875!?'
-
-  hash = 'AMOUNT=1500Mysecretsig1875!?CURRENCY=EURMysecretsig1875!?OPERATION=RESMysecretsig1875!?ORDERID=1234Mysecretsig1875!?PSPID=MyPSPIDMysecretsig1875!?'
-
-  digest = 'EB52902BCC4B50DC1250E5A7C1068ECF97751256'
-
-  p Rpostf::Params.new(Hash[*params]).to_digest(shared_secret_sha).upcase == digest
-  p Rpostf::Params.new(Hash[*params]).to_hash(shared_secret_sha) == hash
-  
-  ps = {
-    :login => 'MyPSPID',
-    :local_host => 'asdf'
-  }
-  # puts Rpostf.new(ps).debug(Hash[*params])
 
 end
 
