@@ -2,13 +2,16 @@
 
 Rpostf is a Ruby library to the e-Payment API (v4.4) provided by PostFinance (Swiss Post).
 
-Generate PostFinance (Swiss Post) e-Payment Params/URLs/Forms and validate their responses.
+Generate Params/URLs/Forms and validate their responses.
 
 The approach this library is used for works much like 'Google Checkout' or 'Paypal Express'.
 
 More Documentation
 
  * https://e-payment.postfinance.ch/
+
+This library has been written in context of building webshops on top of
+[Spree](http://spreecommerce.com) at [Panter LLC](http://panter.ch), Zurich.
 
 ## Install
 
