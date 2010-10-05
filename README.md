@@ -10,6 +10,10 @@ More Documentation
 
  * https://e-payment.postfinance.ch/
 
+## Install
+
+    gem install rpostf
+
 ## Example
 
     pf = Rpostf.new(:login => 'your_login',
