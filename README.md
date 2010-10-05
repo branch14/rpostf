@@ -11,7 +11,7 @@ More Documentation
  * https://e-payment.postfinance.ch/
 
 This library has been written in context of building webshops on top of
-[Spree](http://spreecommerce.com) at [Panter LLC](http://panter.ch), Zurich.
+[Spree](http://spreecommerce.com) at [Panter llc](http://panter.ch), Zurich.
 
 ## Install
 
@@ -69,9 +69,9 @@ vender/extensions/your_theme/app/views/checkouts/_payment.html.haml
    future version unintentionally.
  * Commit, do not mess with rakefile, version, or history. (if you
    want to have your own version, that is fine but bump version in a
-   commit by itself I can ignor e when I pull)
+   commit by itself I can ignore when I pull)
  * Send me a pull request. Bonus points for topic branches.
 
 ## Copyright
 
-Copyright (c) 2010 Phil Hofmann <pho at panter dot ch>. See LICENSE for details.
+Copyright (c) 2010 Phil Hofmann. See LICENSE for details.
