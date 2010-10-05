@@ -31,17 +31,19 @@ This is just a suggestion.
 config/rpostf.yml
     development:
       login: yourpspidTEST
-      sha1outsig: somepasswith16digits
       sha1insig: someotherpasswith16digits
+      sha1outsig: somepasswith16digits
+      currency : CHF
       base_url: https://e-payment.postfinance.ch/ncol/test/orderstandard.asp
-      accept_url: http://your-dev-deployment/route-to-accept-postfinance-requests
+      accepturl: http://your-dev-deployment/route-to-accept-postfinance-requests
     
     production:
       login: youpspid
-      sha1outsig: somepasswith16digits
       sha1insig: someotherpasswith16digits
+      sha1outsig: somepasswith16digits
+      currency : CHF
       base_url: https://e-payment.postfinance.ch/ncol/prod/orderstandard.asp
-      accept_url: http://your-production-deployment/route-to-accept-postfinance-requests
+      accepturl: http://your-production-deployment/route-to-accept-postfinance-requests
 
 config/initializers/rpostf.rb
     config_filename = File.join(RAILS_ROOT, %w(config rpostf.yml))

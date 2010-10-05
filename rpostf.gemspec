@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{rpostf}
-  s.version = "0.1.2"
+  s.version = "0.2.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Phil Hofmann"]
-  s.date = %q{2010-09-01}
+  s.date = %q{2010-10-05}
   s.description = %q{generate PostFinance (Swiss Post) URLs and vaildate responses}
   s.email = %q{phil@branch14.org}
   s.extra_rdoc_files = [
@@ -23,6 +23,7 @@ Gem::Specification.new do |s|
      "README.md",
      "Rakefile",
      "VERSION",
+     "lib/array.rb",
      "lib/hash.rb",
      "lib/nil_class.rb",
      "lib/rpostf.rb",
@@ -30,7 +31,9 @@ Gem::Specification.new do |s|
      "lib/string.rb",
      "rpostf.gemspec",
      "test/helper.rb",
-     "test/test_rpostf.rb"
+     "test/test_array.rb",
+     "test/test_rpostf.rb",
+     "test/test_rpostf_params.rb"
   ]
   s.homepage = %q{http://github.com/branch14/rpostf}
   s.rdoc_options = ["--charset=UTF-8"]
@@ -38,8 +41,9 @@ Gem::Specification.new do |s|
   s.rubygems_version = %q{1.3.6}
   s.summary = %q{PostFinance (Swiss Post) Payment Gateway API}
   s.test_files = [
-    "test/helper.rb",
-     "test/rpostf/params.rb",
+    "test/test_array.rb",
+     "test/test_rpostf_params.rb",
+     "test/helper.rb",
      "test/test_rpostf.rb"
   ]
 
