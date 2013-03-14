@@ -32,6 +32,7 @@ This library has been written in context of building webshops on top of
 This is just a suggestion.
 
 config/rpostf.yml
+
     development:
       login: yourpspidTEST
       sha1insig: someotherpasswith16digits
@@ -49,6 +50,7 @@ config/rpostf.yml
       accepturl: http://your-production-deployment/route-to-accept-postfinance-requests
 
 config/initializers/rpostf.rb
+
     config_filename = File.join(RAILS_ROOT, %w(config rpostf.yml))
     config = File.open(config_filename) { |f| YAML::load(f) }
     RPOSTF = Rpostf.new(config[RAILS_ENV])
@@ -56,6 +58,7 @@ config/initializers/rpostf.rb
 And in the view you might want to add something like...
 
 vender/extensions/your_theme/app/views/checkouts/_payment.html.haml
+
     -ps = { 'orderID' => @order.number,           |
             'amount' => (@order.total*100).to_i } |
     -url = RPOSTF.url_for_get(ps)
